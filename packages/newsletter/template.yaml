@@ -1,0 +1,104 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: HNTLDR Newsletter Lambda Function
+
+Parameters:
+  Environment:
+    Type: String
+    Description: Deployment environment (dev or prod)
+    AllowedValues:
+      - dev
+      - prod
+  DatabaseUrl:
+    Type: String
+    Description: PostgreSQL connection string
+    NoEcho: true
+  ResendApiKey:
+    Type: String
+    Description: Resend API key
+    NoEcho: true
+  OpenAiApiKey:
+    Type: String
+    Description: OpenAI API key
+    NoEcho: true
+  FromEmail:
+    Type: String
+    Description: Email address to send from
+    Default: updates@hntldr.com
+  DeploymentBucket:
+    Type: String
+    Description: S3 bucket containing the Lambda deployment package
+
+Resources:
+  NewsletterFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub hntldr-newsletter-${Environment}
+      Handler: index.handler
+      Role: !GetAtt NewsletterLambdaRole.Arn
+      Code:
+        S3Bucket: !Ref DeploymentBucket
+        S3Key: newsletter.zip
+      Runtime: nodejs18.x
+      Timeout: 30
+      MemorySize: 256
+      Environment:
+        Variables:
+          DATABASE_URL: !Ref DatabaseUrl
+          RESEND_API_KEY: !Ref ResendApiKey
+          FROM_EMAIL: !Ref FromEmail
+          OPENAI_API_KEY: !Ref OpenAiApiKey
+
+  NewsletterLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub hntldr-newsletter-role-${Environment}
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: !Sub NewsletterLambdaPolicy-${Environment}
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - rds:*
+                  - rds-data:*
+                  - rds-db:connect
+                  - secretsmanager:GetSecretValue
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                Resource: 
+                  - !Sub 'arn:aws:s3:::${DeploymentBucket}/*'
+
+  WeeklyNewsletterRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub hntldr-newsletter-weekly-${Environment}
+      Description: !Sub Trigger HNTLDR newsletter every Friday at 09:00 UTC (${Environment})
+      ScheduleExpression: cron(0 9 ? * FRI *)
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt NewsletterFunction.Arn
+          Id: !Sub WeeklyNewsletter-${Environment}
+
+  PermissionForEventsToInvokeLambda:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref NewsletterFunction
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt WeeklyNewsletterRule.Arn
+
+Outputs:
+  LambdaFunction:
+    Description: Lambda function ARN
+    Value: !GetAtt NewsletterFunction.Arn 

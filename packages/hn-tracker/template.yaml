@@ -1,0 +1,79 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'CloudFormation template for Hacker News tracker Lambda function with hourly schedule'
+
+Parameters:
+  DatabaseUrl:
+    Type: String
+    Description: PostgreSQL connection string
+    NoEcho: true
+
+Resources:
+  HackerNewsTrackerFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: hacker-news-tracker
+      Handler: index.handler
+      Runtime: nodejs20.x
+      Timeout: 30
+      MemorySize: 128
+      Code: 
+        S3Bucket: hn-tracker-lambda-1742836337
+        S3Key: function.zip
+      Environment:
+        Variables:
+          DATABASE_URL: !Ref DatabaseUrl
+      Role: !GetAtt LambdaExecutionRole.Arn
+
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: hacker-news-tracker-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: LambdaCustomPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 's3:GetObject'
+                  - 's3:PutObject'
+                  - 's3:ListBucket'
+                Resource:
+                  - !Sub 'arn:aws:s3:::${AWS::StackName}-*'
+                  - !Sub 'arn:aws:s3:::${AWS::StackName}-*/*'
+
+  HourlyScheduleRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: HourlyHackerNewsTrackerSchedule
+      Description: 'Trigger Hacker News tracker Lambda function every hour'
+      ScheduleExpression: 'cron(0 * * * ? *)'
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt HackerNewsTrackerFunction.Arn
+          Id: HackerNewsTrackerTarget
+
+  PermissionForEventsToInvokeLambda:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref HackerNewsTrackerFunction
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt HourlyScheduleRule.Arn
+
+Outputs:
+  LambdaFunction:
+    Description: Lambda function ARN
+    Value: !GetAtt HackerNewsTrackerFunction.Arn
+  HourlyScheduleRule:
+    Description: EventBridge rule ARN for hourly tracking
+    Value: !GetAtt HourlyScheduleRule.Arn
