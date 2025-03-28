@@ -1,0 +1,191 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: 'VT323';
+  src: url('/fonts/VT323-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Press Start 2P';
+  src: url('/fonts/PressStart2P-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 95%;
+    --foreground: 0 0% 10%;
+    --primary: 0 0% 95%;
+    --primary-foreground: 0 0% 10%;
+    --secondary: 30 100% 50%;
+    --secondary-foreground: 0 0% 10%;
+    --accent: 30 100% 60%;
+    --accent-foreground: 0 0% 10%;
+    --muted: 0 0% 85%;
+    --muted-foreground: 0 0% 40%;
+    --border: 0 0% 75%;
+  }
+
+  .dark {
+    --background: 0 0% 5%;
+    --foreground: 0 0% 95%;
+    --primary: 0 0% 10%;
+    --primary-foreground: 0 0% 95%;
+    --secondary: 30 100% 50%;
+    --secondary-foreground: 0 0% 10%;
+    --accent: 30 100% 40%;
+    --accent-foreground: 0 0% 95%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 70%;
+    --border: 0 0% 25%;
+  }
+}
+
+/* Pixelated UI Elements */
+.pixel-borders {
+  @apply border-3 border-dashed;
+  image-rendering: pixelated;
+}
+
+.pixel-box {
+  @apply pixel-borders p-4 transition-all;
+  box-shadow: 5px 5px 0px 0px rgba(0, 0, 0, 0.2);
+}
+
+.pixel-box:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 7px 7px 0px 0px rgba(0, 0, 0, 0.2);
+}
+
+.dark .pixel-box {
+  box-shadow: 5px 5px 0px 0px rgba(255, 255, 255, 0.1);
+}
+
+.dark .pixel-box:hover {
+  box-shadow: 7px 7px 0px 0px rgba(255, 255, 255, 0.1);
+}
+
+/* Pixelated Button */
+.pixel-button {
+  @apply font-pixel-bold px-4 py-2 text-sm uppercase transition-all;
+  image-rendering: pixelated;
+  box-shadow: 3px 3px 0px 0px rgba(0, 0, 0, 0.2);
+}
+
+.pixel-button:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 0.2);
+}
+
+.pixel-button:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0px 0px rgba(0, 0, 0, 0.2);
+}
+
+.dark .pixel-button {
+  box-shadow: 3px 3px 0px 0px rgba(255, 255, 255, 0.1);
+}
+
+.dark .pixel-button:hover {
+  box-shadow: 4px 4px 0px 0px rgba(255, 255, 255, 0.1);
+}
+
+.dark .pixel-button:active {
+  box-shadow: 1px 1px 0px 0px rgba(255, 255, 255, 0.1);
+}
+
+/* Custom Range Input Styling */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 12px;
+  border: 2px dashed #888;
+  background: transparent;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: #f97316;
+  border: 2px solid #c2410c;
+  cursor: pointer;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: #f97316;
+  border: 2px solid #c2410c;
+  cursor: pointer;
+}
+
+.dark input[type="range"]::-webkit-slider-thumb {
+  background: #f97316;
+  border: 2px solid #c2410c;
+}
+
+.dark input[type="range"]::-moz-range-thumb {
+  background: #f97316;
+  border: 2px solid #c2410c;
+}
+
+/* Pixelated Background Pattern */
+.pixel-pattern {
+  background-image: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%239C92AC' fill-opacity='0.1' fill-rule='evenodd'%3E%3Ccircle cx='3' cy='3' r='3'/%3E%3Ccircle cx='13' cy='13' r='3'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+.dark .pixel-pattern {
+  background-image: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23FFFFFF' fill-opacity='0.05' fill-rule='evenodd'%3E%3Ccircle cx='3' cy='3' r='3'/%3E%3Ccircle cx='13' cy='13' r='3'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* Custom color classes */
+.bg-primary {
+  background-color: hsl(var(--primary));
+}
+
+.bg-secondary {
+  background-color: hsl(var(--secondary));
+}
+
+.bg-accent {
+  background-color: hsl(var(--accent));
+}
+
+.bg-muted {
+  background-color: hsl(var(--muted));
+}
+
+.text-primary {
+  color: hsl(var(--primary-foreground));
+}
+
+.text-secondary {
+  color: hsl(var(--secondary-foreground));
+}
+
+.text-accent {
+  color: hsl(var(--accent-foreground));
+}
+
+.text-muted {
+  color: hsl(var(--muted-foreground));
+}
+
+.border-primary {
+  border-color: hsl(var(--border));
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: Arial, Helvetica, sans-serif;
+}

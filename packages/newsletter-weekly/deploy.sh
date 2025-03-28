@@ -28,11 +28,11 @@ if [ -z "$ENV" ]; then
 fi
 
 # Configuration
-STACK_NAME="hacker-news-newsletter-${ENV}"
-FUNCTION_NAME="hntldr-newsletter-${ENV}"
+STACK_NAME="hacker-news-newsletter-weekly-${ENV}"
+FUNCTION_NAME="hntldr-newsletter-weekly-${ENV}"
 REGION="us-east-1"
 DEPLOY_BUCKET_NAME="hn-tracker-lambda-1742836337"
-FUNCTION_ZIP="newsletter.zip"
+FUNCTION_ZIP="newsletter-weekly.zip"
 
 # Ensure we're in the correct directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -142,4 +142,4 @@ aws lambda update-function-code \
 rm -rf "$BUILD_DIR"
 
 echo "Deployment completed successfully!"
-echo "Your newsletter function is now scheduled to run every Friday at 09:00 UTC." 
+echo "Your weekly newsletter function is now scheduled to run every Friday at 09:00 UTC." 

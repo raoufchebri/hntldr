@@ -27,12 +27,16 @@ Parameters:
   DeploymentBucket:
     Type: String
     Description: S3 bucket containing the Lambda deployment package
+  FunctionName:
+    Type: String
+    Description: The name of the Lambda function
+    Default: hntldr-newsletter-weekly
 
 Resources:
   NewsletterFunction:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Sub hntldr-newsletter-${Environment}
+      FunctionName: !Sub ${FunctionName}-${Environment}
       Handler: index.handler
       Role: !GetAtt NewsletterLambdaRole.Arn
       Code:

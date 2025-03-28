@@ -1,0 +1,38 @@
+name: Send Newsletter
+
+on:
+  # Trigger manually from GitHub
+  workflow_dispatch:
+    inputs:
+      episodeNumber:
+        description: 'Episode number'
+        required: true
+      episodeDate:
+        description: 'Episode date'
+        required: true
+        default: 'June 15, 2023'
+
+jobs:
+  send-newsletter:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Send Newsletter
+        run: |
+          node scripts/send-newsletter.js \
+            --episode=${{ github.event.inputs.episodeNumber }} \
+            --date="${{ github.event.inputs.episodeDate }}" \
+            --key=${{ secrets.NEWSLETTER_API_KEY }} \
+            --url=${{ secrets.NEWSLETTER_API_URL }}
+        env:
+          NEWSLETTER_API_KEY: ${{ secrets.NEWSLETTER_API_KEY }}
+          NEWSLETTER_API_URL: ${{ secrets.NEWSLETTER_API_URL }} 
