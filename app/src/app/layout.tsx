@@ -3,7 +3,6 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/context/ThemeContext";
 import ThemeToggle from "@/components/ThemeToggle";
-import Disclaimer from "@/components/Disclaimer";
 import DismissibleDisclaimer from "@/components/DismissibleDisclaimer";
 import Link from "next/link";
 
@@ -44,7 +43,6 @@ export default function RootLayout({
                   <Link href="/">
                     <h1 className="text-2xl font-pixel-bold text-primary hover:text-orange-500 transition-colors">HNTLDR</h1>
                   </Link>
-                  <span className="ml-2 text-xs font-pixel text-muted">(Unofficial)</span>
                   <nav className="ml-8 hidden md:flex space-x-4">
                     <Link href="/">
                       <span className="font-pixel text-primary hover:text-orange-500 transition-colors">All Episodes</span>
@@ -64,9 +62,6 @@ export default function RootLayout({
             
             <footer className="bg-muted py-6 border-t-3 border-dashed border-primary">
               <div className="container mx-auto px-4">
-                <div className="mb-6">
-                  <Disclaimer />
-                </div>
                 <div className="flex flex-col md:flex-row justify-between items-center">
                   <div className="mb-4 md:mb-0">
                     <h2 className="text-xl font-pixel text-primary">HNTLDR</h2>

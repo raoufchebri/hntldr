@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { PodcastEpisode as PodcastEpisodeType } from '@/types';
 import PixelAudioPlayer from './PixelAudioPlayer';
 
@@ -7,6 +7,30 @@ interface PodcastEpisodeProps {
 }
 
 export default function PodcastEpisode({ episode }: PodcastEpisodeProps) {
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchAudioUrl() {
+      try {
+        console.log('Fetching signed URL for:', episode.audio_url);
+        const response = await fetch(`/api/audio/${encodeURIComponent(episode.audio_url)}`);
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch audio URL: ${response.statusText}`);
+        }
+
+        setAudioUrl(data.url);
+      } catch (err) {
+        console.error('Error fetching audio URL:', err);
+        setError('Failed to load audio. Please try again later.');
+      }
+    }
+
+    fetchAudioUrl();
+  }, [episode.audio_url]);
+
   // Format dates for display
   const startDate = new Date(episode.start_date).toLocaleDateString();
   const endDate = new Date(episode.end_date).toLocaleDateString();
@@ -22,7 +46,13 @@ export default function PodcastEpisode({ episode }: PodcastEpisodeProps) {
       </div>
       
       <div className="mb-6">
-        <PixelAudioPlayer src={episode.audio_url} />
+        {error ? (
+          <div className="text-red-500 font-pixel">{error}</div>
+        ) : audioUrl ? (
+          <PixelAudioPlayer src={audioUrl} />
+        ) : (
+          <div className="text-gray-500 font-pixel">Loading audio...</div>
+        )}
       </div>
       
       <div className="prose max-w-none">

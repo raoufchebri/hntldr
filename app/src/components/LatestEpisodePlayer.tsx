@@ -23,7 +23,7 @@ export default function LatestEpisodePlayer() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
-    const hasTrackedLoad = useRef(false);
+  const hasTrackedLoad = useRef(false);
   const hasTrackedViewDetails = useRef(false);
 
   useEffect(() => {
@@ -39,13 +39,9 @@ export default function LatestEpisodePlayer() {
           setEpisode(window._latestEpisodeCache.episode);
           
           // Fetch the signed URL for the audio file
-          const audioKey = window._latestEpisodeCache.episode.audio_url.split('/').pop();
-          if (!audioKey) {
-            throw new Error('Invalid audio URL format');
-          }
-          console.log('Fetching signed URL for:', audioKey);
+          console.log('Fetching signed URL for:', window._latestEpisodeCache.episode.audio_url);
           
-          const audioResponse = await fetch(`/api/audio/${encodeURIComponent(audioKey)}`);
+          const audioResponse = await fetch(`/api/audio/${encodeURIComponent(window._latestEpisodeCache.episode.audio_url)}`);
           const audioData = await audioResponse.json();
           
           console.log('Received audio URL:', {
@@ -80,13 +76,9 @@ export default function LatestEpisodePlayer() {
         setEpisode(data.episode);
         
         // Fetch the signed URL for the audio file
-        const audioKey = data.episode.audio_url.split('/').pop();
-        if (!audioKey) {
-          throw new Error('Invalid audio URL format');
-        }
-        console.log('Fetching signed URL for:', audioKey);
+        console.log('Fetching signed URL for:', data.episode.audio_url);
         
-        const audioResponse = await fetch(`/api/audio/${encodeURIComponent(audioKey)}`);
+        const audioResponse = await fetch(`/api/audio/${encodeURIComponent(data.episode.audio_url)}`);
         const audioData = await audioResponse.json();
         
         console.log('Received audio URL:', {
@@ -157,8 +149,7 @@ export default function LatestEpisodePlayer() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
         <div>
           <h3 className="text-lg font-pixel-bold text-primary">
-            Latest Episode: #{episode.id}
-            <span className="ml-2 text-xs font-pixel text-muted">(Unofficial)</span>
+            Latest Episode
           </h3>
           <p className="text-sm font-pixel text-muted">
             {startDate} - {endDate}

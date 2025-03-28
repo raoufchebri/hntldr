@@ -87,8 +87,8 @@ Resources:
     Type: AWS::Events::Rule
     Properties:
       Name: !Sub ${FunctionName}-daily-${Environment}
-      Description: !Sub Trigger HNTLDR daily newsletter at 15:00 UTC except Fridays (${Environment})
-      ScheduleExpression: cron(0 15 ? * MON-THU,SAT-SUN *)
+      Description: !Sub Trigger HNTLDR daily newsletter at 18:00 UTC except Fridays (${Environment})
+      ScheduleExpression: cron(0 18 ? * MON-THU,SAT-SUN *)
       State: ENABLED
       Targets:
         - Arn: !GetAtt NewsletterFunction.Arn

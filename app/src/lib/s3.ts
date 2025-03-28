@@ -14,20 +14,21 @@ const s3Client = new S3Client({
   },
 });
 
-export async function getAudioFileUrl(key: string): Promise<string> {
+export async function getAudioFileUrl(audioUrl: string): Promise<string> {
+  // Extract bucket and key from the full S3 URL
+  const url = new URL(audioUrl);
+  const bucket = url.hostname.split('.')[0];
+  const key = url.pathname.substring(1); // Remove leading slash
+
   console.log('Getting signed URL for:', {
+    bucket,
     key,
-    bucket: process.env.S3_BUCKET_NAME,
     hasAwsKey: !!process.env.AWS_ACCESS_KEY_ID,
     hasAwsSecret: !!process.env.AWS_SECRET_ACCESS_KEY,
   });
 
-  if (!process.env.S3_BUCKET_NAME) {
-    throw new Error('S3_BUCKET_NAME is not configured');
-  }
-
   const command = new GetObjectCommand({
-    Bucket: process.env.S3_BUCKET_NAME,
+    Bucket: bucket,
     Key: key,
     ResponseContentType: 'audio/mpeg',
     ResponseContentDisposition: 'inline',

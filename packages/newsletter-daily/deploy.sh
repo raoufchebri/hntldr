@@ -142,4 +142,4 @@ aws lambda update-function-code \
 rm -rf "$BUILD_DIR"
 
 echo "Deployment completed successfully!"
-echo "Your daily newsletter function is now scheduled to run every day at 15:00 UTC (except Fridays)." 
+echo "Your daily newsletter function is now scheduled to run every day at 18:00 UTC (except Fridays)." 

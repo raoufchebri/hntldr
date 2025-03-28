@@ -1,7 +1,6 @@
 import PodcastList from '@/components/PodcastList';
 import LatestEpisodePlayer from '@/components/LatestEpisodePlayer';
 import SubscribeForm from '@/components/SubscribeForm';
-import Tabs from '@/components/Tabs';
 import Link from 'next/link';
 
 export default function Home() {
@@ -10,7 +9,7 @@ export default function Home() {
       <header className="mb-8 text-center">
         <h1 className="text-4xl font-pixel-bold text-primary mb-2 animate-pixel-pulse">HNTLDR</h1>
         <p className="text-xl font-pixel text-muted">
-          Hacker News Too Long; Didn&apos;t Read - Unofficial Audio Summaries
+          Hacker News Too Long; Didn&apos;t Read - Audio Summaries
         </p>
       </header>
       
@@ -42,22 +41,7 @@ export default function Home() {
         <h2 className="text-2xl font-pixel-bold text-primary mb-6 border-b-3 border-dashed border-primary pb-2">
           All Episodes
         </h2>
-        <Tabs
-          tabs={[
-            {
-              label: "ALL",
-              content: <PodcastList filter="all" />
-            },
-            {
-              label: "WEEKLY",
-              content: <PodcastList filter="weekly" />
-            },
-            {
-              label: "DAILY",
-              content: <PodcastList filter="daily" />
-            }
-          ]}
-        />
+        <PodcastList />
       </div>
     </div>
   );

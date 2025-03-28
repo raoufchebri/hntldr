@@ -4,10 +4,17 @@ import { PodcastEpisode } from '@/types';
 
 export async function GET() {
   try {
-    // Query to get all podcast episodes ordered by creation date (newest first)
+    // Query to get all podcast episodes from both tables ordered by end_date
     const result = await query(`
-      SELECT id, start_date, end_date, summary, audio_url, created_at
-      FROM hacker_news_summaries
+      (SELECT id, start_date, end_date, summary, audio_url, created_at, 
+        SUBSTRING(title, 2, LENGTH(title) - 2) as title, 
+        'weekly' as episode_type
+      FROM summary_weekly)
+      UNION ALL
+      (SELECT id, start_date, end_date, summary, audio_url, created_at, 
+        SUBSTRING(title, 2, LENGTH(title) - 2) as title, 
+        'daily' as episode_type
+      FROM summary_daily)
       ORDER BY end_date DESC
     `);
 

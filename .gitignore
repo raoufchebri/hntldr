@@ -34,3 +34,7 @@ Thumbs.db
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log* 
+
+# Scripts
+invoke-daily-summaries.sh
+invoke-weekly-summaries.sh

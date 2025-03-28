@@ -55,7 +55,7 @@ Resources:
   NewsletterLambdaRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub hntldr-newsletter-role-${Environment}
+      RoleName: !Sub ${FunctionName}-role-${Environment}
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -66,7 +66,7 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
       Policies:
-        - PolicyName: !Sub NewsletterLambdaPolicy-${Environment}
+        - PolicyName: !Sub NewsletterWeeklyLambdaPolicy-${Environment}
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -86,9 +86,9 @@ Resources:
   WeeklyNewsletterRule:
     Type: AWS::Events::Rule
     Properties:
-      Name: !Sub hntldr-newsletter-weekly-${Environment}
-      Description: !Sub Trigger HNTLDR newsletter every Friday at 09:00 UTC (${Environment})
-      ScheduleExpression: cron(0 9 ? * FRI *)
+      Name: !Sub ${FunctionName}-weekly-${Environment}
+      Description: !Sub Trigger HNTLDR newsletter every Friday at 18:00 UTC (${Environment})
+      ScheduleExpression: cron(0 18 ? * FRI *)
       State: ENABLED
       Targets:
         - Arn: !GetAtt NewsletterFunction.Arn

@@ -2,6 +2,12 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: 'CloudFormation template for Hacker News tracker Lambda function with hourly schedule'
 
 Parameters:
+  Environment:
+    Type: String
+    Description: The deployment environment (dev or prod)
+    AllowedValues:
+      - dev
+      - prod
   DatabaseUrl:
     Type: String
     Description: PostgreSQL connection string
@@ -11,7 +17,7 @@ Resources:
   HackerNewsTrackerFunction:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: hacker-news-tracker
+      FunctionName: !Sub hacker-news-tracker-${Environment}
       Handler: index.handler
       Runtime: nodejs20.x
       Timeout: 30
@@ -27,7 +33,7 @@ Resources:
   LambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: hacker-news-tracker-role
+      RoleName: !Sub hacker-news-tracker-role-${Environment}
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -48,13 +54,13 @@ Resources:
                   - 's3:PutObject'
                   - 's3:ListBucket'
                 Resource:
-                  - !Sub 'arn:aws:s3:::${AWS::StackName}-*'
-                  - !Sub 'arn:aws:s3:::${AWS::StackName}-*/*'
+                  - !Sub 'arn:aws:s3:::hn-tracker-lambda-1742836337'
+                  - !Sub 'arn:aws:s3:::hn-tracker-lambda-1742836337/*'
 
   HourlyScheduleRule:
     Type: AWS::Events::Rule
     Properties:
-      Name: HourlyHackerNewsTrackerSchedule
+      Name: !Sub hourly-hacker-news-tracker-${Environment}
       Description: 'Trigger Hacker News tracker Lambda function every hour'
       ScheduleExpression: 'cron(0 * * * ? *)'
       State: ENABLED

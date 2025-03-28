@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
-import { PodcastEpisode as PodcastEpisodeType } from '@/types';
+import { PodcastEpisode as PodcastEpisodeType, EpisodeSource } from '@/types';
 import PixelAudioPlayer from './PixelAudioPlayer';
 
 interface EpisodeDetailProps {
@@ -22,11 +22,16 @@ async function getEpisodeData(episodeId: string, isLatest: boolean) {
   }
   
   const data = await response.json();
-  return data.episode;
+  return {
+    episode: data.episode,
+    sources: data.sources || []
+  };
 }
 
 export default function EpisodeDetail({ episodeId, isLatest = false }: EpisodeDetailProps) {
   const [episode, setEpisode] = useState<PodcastEpisodeType | null>(null);
+  const [sources, setSources] = useState<EpisodeSource[]>([]);
+  const [episodeNumber, setEpisodeNumber] = useState<number | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [hnLinks, setHnLinks] = useState<{ id: string; title: string }[]>([]);
@@ -41,16 +46,24 @@ export default function EpisodeDetail({ episodeId, isLatest = false }: EpisodeDe
         if (!episodeId && !isLatest) return;
         
         const data = await getEpisodeData(episodeId || '', isLatest);
-        setEpisode(data);
+        setEpisode(data.episode);
+        setSources(data.sources);
+
+        // Fetch all episodes to determine episode number
+        const allEpisodesResponse = await fetch('/api/episodes');
+        if (allEpisodesResponse.ok) {
+          const allEpisodesData = await allEpisodesResponse.json();
+          const episodes: PodcastEpisodeType[] = allEpisodesData.episodes;
+          const index = episodes.findIndex((ep: PodcastEpisodeType) => ep.id === data.episode.id);
+          if (index !== -1) {
+            setEpisodeNumber(episodes.length - index);
+          }
+        }
 
         // Fetch the signed URL for the audio file
-        const audioKey = data.audio_url.split('/').pop();
-        if (!audioKey) {
-          throw new Error('Invalid audio URL format');
-        }
-        console.log('Fetching signed URL for:', audioKey);
+        console.log('Fetching signed URL for:', data.episode.audio_url);
         
-        const audioResponse = await fetch(`/api/audio/${encodeURIComponent(audioKey)}`);
+        const audioResponse = await fetch(`/api/audio/${encodeURIComponent(data.episode.audio_url)}`);
         const audioData = await audioResponse.json();
         
         console.log('Received audio URL:', {
@@ -67,16 +80,16 @@ export default function EpisodeDetail({ episodeId, isLatest = false }: EpisodeDe
         setAudioUrl(audioData.url);
         
         // Extract HN story IDs from the summary
-        if (data.summary) {
+        if (data.episode.summary) {
           const regex = /https:\/\/news\.ycombinator\.com\/item\?id=(\d+)/g;
-          const matches = [...data.summary.matchAll(regex)];
+          const matches = [...data.episode.summary.matchAll(regex)];
           
           // Extract titles for each HN story
           const extractedLinks = matches.map((match, index) => {
             const id = match[1];
             // Try to extract title from the summary
             const titleRegex = new RegExp(`\\d+\\. ([^\\(]+)\\s*\\(`, 'g');
-            const titleMatches = [...data.summary.matchAll(titleRegex)];
+            const titleMatches = [...data.episode.summary.matchAll(titleRegex)];
             const title = titleMatches[index] ? titleMatches[index][1].trim() : `Hacker News Story ${index + 1}`;
             
             return { id, title };
@@ -148,8 +161,10 @@ export default function EpisodeDetail({ episodeId, isLatest = false }: EpisodeDe
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-pixel-bold text-primary">
-          {isLatest ? 'Latest Episode' : `Episode #${episode.id}`}
-          <span className="ml-2 text-xs font-pixel text-muted">(Unofficial)</span>
+          {isLatest ? 'Latest Episode' : episode.title}
+          <span className="ml-2 text-xs font-pixel text-muted">
+            {episodeNumber ? `(Episode #${episodeNumber} • ${episode.episode_type})` : `(${episode.episode_type})`}
+          </span>
         </h1>
         <Link href="/" onClick={handleBackToHome}>
           <div className="pixel-button bg-orange-500 text-white">
@@ -177,6 +192,34 @@ export default function EpisodeDetail({ episodeId, isLatest = false }: EpisodeDe
             />
           )}
         </div>
+        
+        {sources.length > 0 && (
+          <div className="mb-6">
+            <h3 className="text-lg font-pixel-bold mb-2 text-primary">
+              Sources
+            </h3>
+            <div className="pixel-borders p-4 bg-muted">
+              <ul className="space-y-4">
+                {sources.map((source, index) => (
+                  <li key={index} className="font-pixel">
+                    <a 
+                      href={source.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block hover:text-orange-500 transition-colors"
+                    >
+                      <div className="text-base font-pixel-bold mb-1">{source.title}</div>
+                      <div className="text-sm text-muted">
+                        <span className="mr-4">{source.points} points</span>
+                        <span>{source.comments_count} comments</span>
+                      </div>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
         
         {hnLinks.length > 0 && (
           <div className="mb-6">
@@ -208,9 +251,6 @@ export default function EpisodeDetail({ episodeId, isLatest = false }: EpisodeDe
           <div className="whitespace-pre-wrap font-pixel text-primary bg-muted p-4 pixel-borders">
             {episode.summary}
           </div>
-          <p className="text-xs font-pixel text-muted mt-4">
-            Note: This is an unofficial summary of content from Hacker News. HNTLDR is not affiliated with Hacker News or Y Combinator.
-          </p>
         </div>
       </div>
     </div>

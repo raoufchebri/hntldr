@@ -10,7 +10,7 @@ const DATABASE_URL = process.env.DATABASE_URL; // PostgreSQL connection string
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY; // OpenAI API key
 const ELEVEN_LABS_API_KEY = process.env.ELEVEN_LABS_API_KEY; // Eleven Labs API key
 const S3_BUCKET_NAME = process.env.S3_BUCKET_NAME || 'hntldr-audio'; // S3 bucket for storing audio files
-const ELEVEN_LABS_VOICE_ID = process.env.ELEVEN_LABS_VOICE_ID || 'pNInz6obpgDQGcFmaJgB'; // Default to Adam voice
+const ELEVEN_LABS_VOICE_ID = process.env.ELEVEN_LABS_VOICE_ID || '3DR8c2yd30eztg65o4jV'; // Default to Aaron voice
 
 // Initialize S3 client
 const s3Client = new S3Client({ region: process.env.AWS_REGION || 'us-east-1' });
@@ -77,8 +77,10 @@ async function convertTextToSpeech(text, voiceId = ELEVEN_LABS_VOICE_ID) {
         text: text,
         model_id: 'eleven_turbo_v2',
         voice_settings: {
+          speed: 1.0,
           stability: 0.5,
-          similarity_boost: 0.75
+          similarity_boost: 0.75,
+          style: 0.45
         }
       })
     });
@@ -316,10 +318,28 @@ export const handler = async (event, context) => {
       endDate,
       summary,
       audioUrl,
-      title
+      title,
     ]);
     
     const summaryId = insertResult.rows[0].id;
+
+    // Store sources in summary_sources table
+    console.log("Storing sources in the database...");
+    const insertSourceQuery = `
+      INSERT INTO summary_sources (summary_id, summary_type, url, title, points, comments_count, created_at)
+      VALUES ($1, $2, $3, $4, $5, $6, NOW())
+    `;
+
+    await Promise.all(storiesWithDetails.map(story => 
+      client.query(insertSourceQuery, [
+        summaryId,
+        'daily',
+        story.url,
+        story.title,
+        story.score,
+        story.descendants
+      ])
+    ));
 
     return {
       statusCode: 200,
