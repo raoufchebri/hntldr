@@ -157,13 +157,9 @@ export const handler = async (event, context) => {
       endDate = endDate || defaultRange.endDate;
     }
 
-    // Get the latest summary ID
-    const latestSummaryQuery = `
-      SELECT COALESCE(MAX(id), 0) + 1 as next_id
-      FROM hacker_news_summaries;
-    `;
-    const summaryIdResult = await client.query(latestSummaryQuery);
-    const summaryId = summaryIdResult.rows[0].next_id;
+    // Get the week number for the newsletter ID
+    const startDateObj = new Date(startDate);
+    const weekNumber = Math.ceil((startDateObj.getTime() - new Date(startDateObj.getFullYear(), 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000));
 
     console.log(`Fetching top stories from ${startDate} to ${endDate}`);
 
@@ -224,7 +220,7 @@ export const handler = async (event, context) => {
     const subscribersResult = await client.query(subscribersQuery);
     const subscribers = subscribersResult.rows;
 
-    console.log(`Sending newsletter #${summaryId} to ${subscribers.length} subscribers`);
+    console.log(`Sending newsletter #${weekNumber} to ${subscribers.length} subscribers`);
 
     // Send email to each subscriber
     const emailPromises = subscribers.map(subscriber => {
@@ -237,7 +233,7 @@ export const handler = async (event, context) => {
       return resend.emails.send({
         from: FROM_EMAIL,
         to: subscriber.email,
-        subject: `HNTLDR Weekly #${summaryId}: ${subjectLine}`,
+        subject: `HNTLDR Weekly #${weekNumber}: ${subjectLine}`,
         html: html
       });
     });
@@ -248,7 +244,7 @@ export const handler = async (event, context) => {
       statusCode: 200,
       body: JSON.stringify({ 
         message: "Weekly newsletter sent successfully",
-        summaryId,
+        weekNumber,
         subjectLine,
         recipientCount: subscribers.length,
         startDate,
@@ -265,3 +261,4 @@ export const handler = async (event, context) => {
     await client.end();
   }
 };
+
