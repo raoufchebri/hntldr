@@ -1,0 +1,23 @@
+{
+  "name": "hn-story-summarizer",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "index.mjs",
+
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "test-local": "node test-local.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "Lambda function to summarize top Hacker News stories of the week",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.525.0",
+    "dotenv": "^16.4.5",
+    "jsdom": "^26.0.0",
+    "node-fetch": "^3.3.2",
+    "openai": "^4.28.0",
+    "pg": "^8.13.3"
+  }
+}
