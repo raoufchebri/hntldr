@@ -1,0 +1,122 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: A Lambda function that summarizes Hacker News stories.
+
+Parameters:
+  Environment:
+    Type: String
+    Description: The deployment environment (dev or prod)
+    AllowedValues:
+      - dev
+      - prod
+  DatabaseUrl:
+    Type: String
+    Description: The URL of the database to connect to
+  OpenAIApiKey:
+    Type: String
+    Description: The API key for OpenAI
+  ElevenLabsApiKey:
+    Type: String
+    Description: The API key for ElevenLabs
+  S3BucketName:
+    Type: String
+    Description: The name of the S3 bucket to store audio files
+    Default: hntldr-daily-audio-summary
+  FunctionName:
+    Type: String
+    Description: The name of the Lambda function
+    Default: hacker-news-daily-summarizer
+  ScheduleName:
+    Type: String
+    Description: The name of the EventBridge schedule
+    Default: daily-summary-schedule
+
+Resources:
+  AudioBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub ${S3BucketName}-${Environment}
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+    DeletionPolicy: Retain
+
+  HackerNewsWeeklySummarizerFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub ${FunctionName}-${Environment}
+      Runtime: nodejs18.x
+      Handler: index.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Code:
+        S3Bucket: hn-tracker-lambda-1742836337
+        S3Key: function.zip
+      MemorySize: 512
+      Timeout: 900
+      Environment:
+        Variables:
+          DATABASE_URL: !Ref DatabaseUrl
+          OPENAI_API_KEY: !Ref OpenAIApiKey
+          ELEVEN_LABS_API_KEY: !Ref ElevenLabsApiKey
+          S3_BUCKET_NAME: !Ref AudioBucket
+
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: S3Access
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:PutObjectAcl
+                  - s3:GetObject
+                  - s3:ListBucket
+                Resource:
+                  - !GetAtt AudioBucket.Arn
+                  - !Join ['', [!GetAtt AudioBucket.Arn, '/*']]
+
+  WeeklyScheduleRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub ${ScheduleName}-${Environment}
+      Description: "Schedule to run the Lambda function daily"
+      ScheduleExpression: "cron(0 8 ? * * *)"
+      State: "ENABLED"
+      Targets:
+        - Arn: !GetAtt HackerNewsWeeklySummarizerFunction.Arn
+          Id: "WeeklyTarget"
+
+  PermissionForEventsToInvokeLambda:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref HackerNewsWeeklySummarizerFunction
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn: !GetAtt WeeklyScheduleRule.Arn
+
+Outputs:
+  LambdaFunction:
+    Description: Lambda function ARN
+    Value: !GetAtt HackerNewsWeeklySummarizerFunction.Arn
+  WeeklyScheduleRule:
+    Description: EventBridge rule ARN for weekly summarization
+    Value: !GetAtt WeeklyScheduleRule.Arn
+  AudioBucketURL:
+    Description: URL of the S3 bucket for audio files
+    Value: !Sub 'https://${S3BucketName}.s3.amazonaws.com/' 
