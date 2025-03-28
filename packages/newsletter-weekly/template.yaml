@@ -87,8 +87,8 @@ Resources:
     Type: AWS::Events::Rule
     Properties:
       Name: !Sub ${FunctionName}-weekly-${Environment}
-      Description: !Sub Trigger HNTLDR newsletter every Friday at 18:00 UTC (${Environment})
-      ScheduleExpression: cron(0 18 ? * FRI *)
+      Description: Triggers the weekly newsletter function every Friday at 17:00 UTC
+      ScheduleExpression: cron(0 17 ? * FRI *)
       State: ENABLED
       Targets:
         - Arn: !GetAtt NewsletterFunction.Arn
