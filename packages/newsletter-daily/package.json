@@ -1,5 +1,5 @@
 {
-  "name": "hntldr-newsletter",
+  "name": "hntldr-newsletter-daily",
   "version": "1.0.0",
   "description": "HNTLDR weekly newsletter Lambda function",
   "main": "index.mjs",

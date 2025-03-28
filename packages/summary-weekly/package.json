@@ -1,5 +1,5 @@
 {
-  "name": "hn-story-summarizer",
+  "name": "hn-story-summarizer-weekly",
   "version": "1.0.0",
   "type": "module",
   "main": "index.mjs",
