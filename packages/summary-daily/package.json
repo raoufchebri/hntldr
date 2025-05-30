@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "type": "module",
   "main": "index.mjs",
-
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "test-local": "node test-local.js"
@@ -13,7 +12,10 @@
   "license": "ISC",
   "description": "Lambda function to summarize top Hacker News stories of the week",
   "dependencies": {
+    "@ai-sdk/elevenlabs": "^0.0.3",
+    "@ai-sdk/openai": "^1.3.22",
     "@aws-sdk/client-s3": "^3.525.0",
+    "ai": "^4.3.16",
     "dotenv": "^16.4.5",
     "jsdom": "^26.0.0",
     "node-fetch": "^3.3.2",
