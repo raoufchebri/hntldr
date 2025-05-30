@@ -1,5 +1,7 @@
 import pkg from 'pg';
-import OpenAI from 'openai';
+// import OpenAI from 'openai';
+import { generateText } from 'ai';
+import { openai } from '@ai-sdk/openai';
 const { Client } = pkg;
 import { JSDOM } from 'jsdom';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
@@ -7,7 +9,6 @@ import fetch from 'node-fetch';
 
 const HN_ITEM_URL = "https://hacker-news.firebaseio.com/v0/item/";
 const DATABASE_URL = process.env.DATABASE_URL; // PostgreSQL connection string
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY; // OpenAI API key
 const ELEVEN_LABS_API_KEY = process.env.ELEVEN_LABS_API_KEY; // Eleven Labs API key
 const S3_BUCKET_NAME = process.env.S3_BUCKET_NAME || 'hntldr-audio'; // S3 bucket for storing audio files
 const ELEVEN_LABS_VOICE_ID = process.env.ELEVEN_LABS_VOICE_ID || '3DR8c2yd30eztg65o4jV'; // Default to Aaron voice
@@ -137,7 +138,7 @@ function getPast24Hours() {
 export const handler = async (event, context) => {
   console.log("Event received:", JSON.stringify(event));
   const client = new Client({ connectionString: DATABASE_URL });
-  const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
+  // const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 
   try {
     await client.connect();
@@ -228,68 +229,62 @@ export const handler = async (event, context) => {
       `;
       }).join("\n");
 
-    const user_prompt = `
-    Here are the top Hacker News stories of the past week:
-
-    ${storiesFormatted}
-
-    Write a news report based on the top stories, focusing on the top 3 stories.
-    The report should include a summary of the top stories from Hacker News into a smooth, well-paced podcast script for HNTLDR. 
-    The script should be engaging, friendly, and easy to listen to.
-    `;
-
     const system_prompt = `
-      You are an engaging and knowledgeable tech newscaster delivering a compelling news report for HNTLDR, a podcast that breaks down the top Hacker News stories.
-      Your tone should be friendly, concise, and conversational—like a tech-savvy host guiding listeners through the latest trends. 
-      Your goal is to make complex topics easy to grasp and fun to follow, an explain why they matter to your listeners.
-      Use the provided story stories to craft a **fluid, ready-to-read script** with:
+      You are an engaging and knowledgeable tech newscaster delivering a compelling spoken podcast script for HNTLDR, which breaks down the top Hacker News stories.
       
-      **An engaging opening**: Hey everyone, welcome to HNTLDR—the podcast that gives you the top stories from Hacker News, fast. I'm Kevin, and here's what's buzzing in tech this week...
-      **A quick summary**: A brief overview of the top stories, highlighting key points and why they matter.
-      **A well-structured breakdown**: Explain each story clearly with context and why it matters, using smooth transitions.
-      **A strong closing**: A quick recap, a teaser for the next episode, and a friendly sign-off.
+      Your tone should be friendly, concise, and conversational—like a tech-savvy host guiding listeners through the latest trends. Your goal is to make complex topics easy to grasp and fun to follow, and to explain why they matter to the listener.
       
-      Keep it crisp, fun, and easy to follow—like a tech-savvy friend keeping the audience in the loop.
-    `;
+      IMPORTANT:
+      - This script will be read aloud by a text-to-speech model.
+      - You must only output natural spoken text, as if it were directly spoken by a single narrator.
+      - Do NOT include any formatting, markdown, speaker names, stage directions, sound effects, or labels like '[Intro Music]' or '[Kevin:]'.
+      - Do NOT add any section headings, metadata, or annotations. Only output what would be spoken word-for-word.
+      - Do NOT include formatting, labels, headings, or any non-spoken content. The output must be plain text as it would be spoken aloud.
 
-    const speechCompletion = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        { role: "system", content: system_prompt },
-        { role: "user", content: user_prompt }
-        
-      ],
-      max_tokens: 1500,
+      
+      Write it as a single, fluid monologue in plain text.
+      `;
+      
+
+    const user_prompt = `
+      Here are the top Hacker News stories of the past week:
+      
+      ${storiesFormatted}
+      
+      Write a news report summarizing the top 3 stories into a natural, engaging, well-paced podcast script for HNTLDR.
+      
+      The script must be:
+      - Friendly and easy to follow.
+      - Written entirely as if it will be spoken out loud by one host.
+      - Free of all formatting, speaker labels, markdown, sound effects, or stage directions.
+      - Do not include any titles, section headings (like "### Speech"), or annotations of any kind. Only return plain spoken text, nothing else.
+
+      
+      Only return the speech text—no titles, no labels, no brackets—just a plain spoken monologue.
+      `;
+
+    const { text: speech } = await generateText({
+      model: openai('gpt-4o'),
+      prompt: user_prompt,
+      system: system_prompt,
+      maxTokens: 1500
     });
 
-    const speech = speechCompletion.choices[0].message.content;
-
-    const cleanedSpeechCompletion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: "Clean the text to only keep Kevin's speech as shown on a teleprompter. Remove all unnecessary text." },
-        { role: "user", content: `
-          ### Speech
-          ${speech}
-        ` }
-        
-      ],
-      max_tokens: 1500,
+    const { text: summary } = await generateText({
+      model: openai('gpt-4o-mini'),
+      prompt: `
+        ${speech}
+      `,
     });
 
-    const summary = cleanedSpeechCompletion.choices[0].message.content;
-    
-    // Generate a title using GPT-4o-mini
-    const titleCompletion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+    const { text: title } = await generateText({
+      model: openai('gpt-4o-mini'),
       messages: [
-        { role: "system", content: "Generate a short, catchy title for this week's Hacker News summary. The title should be engaging and reflect the main themes discussed. Keep it under 10 words." },
-        { role: "user", content: summary }
-      ],
+          { role: "system", content: "Generate a short, catchy title for this week's Hacker News summary. The title should be engaging and reflect the main themes discussed. Keep it under 10 words." },
+          { role: "user", content: summary }
+        ],
       max_tokens: 50,
     });
-
-    const title = titleCompletion.choices[0].message.content.trim();
     
     // Generate a unique filename for the audio file
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
